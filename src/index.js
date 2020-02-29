@@ -60,43 +60,79 @@ function reducer(
       };
     case INC_BREAK_LEN:
       if (!state.timerRunning)
-        return {
-          breakLength: state.breakLength + 1,
-          sessionLength: state.sessionLength,
-          clock: state.clock,
-          timerRunning: state.timerRunning,
-          timerType: state.timerType
-        };
+        if (state.breakLength < 60)
+          return {
+            breakLength: state.breakLength + 1,
+            sessionLength: state.sessionLength,
+            clock: state.clock,
+            timerRunning: state.timerRunning,
+            timerType: state.timerType
+          };
+        else
+          return {
+            breakLength: state.breakLength,
+            sessionLength: state.sessionLength,
+            clock: state.clock,
+            timerRunning: state.timerRunning,
+            timerType: state.timerType
+          };
       else return state;
     case DEC_BREAK_LEN:
       if (!state.timerRunning)
-        return {
-          breakLength: state.breakLength - 1,
-          sessionLength: state.sessionLength,
-          clock: state.clock,
-          timerRunning: state.timerRunning,
-          timerType: state.timerType
-        };
+        if (state.breakLength > 1)
+          return {
+            breakLength: state.breakLength - 1,
+            sessionLength: state.sessionLength,
+            clock: state.clock,
+            timerRunning: state.timerRunning,
+            timerType: state.timerType
+          };
+        else
+          return {
+            breakLength: state.breakLength,
+            sessionLength: state.sessionLength,
+            clock: state.clock,
+            timerRunning: state.timerRunning,
+            timerType: state.timerType
+          };
       else return state;
     case INC_SESSION_LEN:
       if (!state.timerRunning)
-        return {
-          breakLength: state.breakLength,
-          sessionLength: state.sessionLength + 1,
-          clock: (state.sessionLength + 1) * 60,
-          timerRunning: state.timerRunning,
-          timerType: state.timerType
-        };
+        if (state.sessionLength < 60)
+          return {
+            breakLength: state.breakLength,
+            sessionLength: state.sessionLength + 1,
+            clock: (state.sessionLength + 1) * 60,
+            timerRunning: state.timerRunning,
+            timerType: state.timerType
+          };
+        else
+          return {
+            breakLength: state.breakLength,
+            sessionLength: state.sessionLength,
+            clock: state.clock,
+            timerRunning: state.timerRunning,
+            timerType: state.timerType
+          };
       else return state;
     case DEC_SESSION_LEN:
       if (!state.timerRunning)
-        return {
-          breakLength: state.breakLength,
-          sessionLength: state.sessionLength - 1,
-          clock: (state.sessionLength - 1) * 60,
-          timerRunning: state.timerRunning,
-          timerType: state.timerType
-        };
+        if (state.sessionLength > 1)
+          return {
+            breakLength: state.breakLength,
+            sessionLength: state.sessionLength - 1,
+            clock: (state.sessionLength - 1) * 60,
+            timerRunning: state.timerRunning,
+            timerType: state.timerType
+          };
+        else
+          return {
+            breakLength: state.breakLength,
+            sessionLength: state.sessionLength,
+            clock: state.clock,
+            timerRunning: state.timerRunning,
+            timerType: state.timerType
+          };
       else return state;
     case DEC_TIME:
       if (state.timerRunning) {
@@ -199,30 +235,62 @@ class PomodoroClock extends Component {
       this.props.playTimer();
     } else {
       this.props.pauseTimer();
-      this.props.intervalID && this.state.intervalID.cancel();
+      clearInterval(this.interval);
     }
   }
-  beginCountdown() {}
+  beginCountdown() {
+    const interval = setInterval(() => {
+      this.props.run();
+      if (this.props.clock === 0) {
+        document.getElementById("beep").play();
+      }
+    }, 1000);
+    this.interval = interval;
+  }
   render() {
     return (
       <div>
         <h1>Pomodoro Clock</h1>
         <label for="break-length">
-          Break Length <button onClick={this.props.incrementBreak}>+</button>
-          <span>{this.props.breakLength}</span>
-          <button onClick={this.props.decrementBreak}>-</button>
+          <div id="break-label">Break Length</div>
+          <button id="break-increment" onClick={this.props.incrementBreak}>
+            +
+          </button>
+          <span id="break-length">{this.props.breakLength}</span>
+          <button id="break-decrement" onClick={this.props.decrementBreak}>
+            -
+          </button>
         </label>
         <label for="session-length">
-          Session Length{" "}
-          <button onClick={this.props.incrementSession}>+</button>
-          <span>{this.props.sessionLength}</span>
-          <button onClick={this.props.decrementSession}>-</button>
+          <div id="session-label">Session Length</div>
+          <button id="session-increment" onClick={this.props.incrementSession}>
+            +
+          </button>
+          <span id="session-length">{this.props.sessionLength}</span>
+          <button id="session-decrement" onClick={this.props.decrementSession}>
+            -
+          </button>
         </label>
         <label for="session">
-          {this.props.timerType === SESSION ? "Session" : "Break"}
-          <span>{clockify(this.props.clock)}</span>
-          <button onClick={this.handlePlayPause}>Play/Pause</button>
-          <button onClick={this.props.resetTimer}>Reset</button>
+          <div id="timer-label">
+            {this.props.timerType === SESSION ? "Session" : "Break"}
+          </div>
+          <span id="time-left">{clockify(this.props.clock)}</span>
+          <button id="start_stop" onClick={this.handlePlayPause}>
+            Play/Pause
+          </button>
+          <audio id="beep" src="https://goo.gl/65cBl1"></audio>
+          <button
+            id="reset"
+            onClick={() => {
+              this.props.resetTimer();
+              const audio = document.getElementById("beep");
+              audio.pause();
+              audio.currentTime = 0;
+            }}
+          >
+            Reset
+          </button>
         </label>
       </div>
     );
